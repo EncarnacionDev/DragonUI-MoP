@@ -37,6 +37,18 @@ end
 -- ============================================================================
 
 local NUM_BOSS_FRAMES = 4
+local NUM_ARENA_FRAMES = 5
+
+-- Boss frames (Boss1-4TargetFrame) and arena enemy frames (ArenaEnemyFrame1-5,
+-- reused by Blizzard for battleground flag carriers) share the target-style reskin.
+local function IsEnemyFrameName(frameName)
+    return frameName
+        and (frameName:match("^Boss%dTargetFrame$") or frameName:match("^ArenaEnemyFrame%d$"))
+end
+
+local function IsEnemyUnitToken(unit)
+    return unit and (unit:match("^boss%d$") or unit:match("^arena%d$"))
+end
 
 -- ============================================================================
 -- MODULE STATE
@@ -44,6 +56,7 @@ local NUM_BOSS_FRAMES = 4
 
 local BossModule = UF.CreateModule("boss")
 BossModule.wrapperFrames = {} -- editor wrapper frames indexed 1-4
+BossModule.arenaWrapperFrames = {} -- arena enemy wrapper frames indexed 1-5
 BossModule.secureAnchors = {}
 BossModule.configured = false
 
@@ -183,6 +196,45 @@ local function EnforceFlashStyle(flashTex, parentFrame)
     if flashTex:IsShown() then mirror:Show() else mirror:Hide() end
 end
 
+-- Re-apply DragonUI styling when a boss/arena frame is shown. Shared by the
+-- boss and arena OnShow hooks so Blizzard's native re-show doesn't strip it.
+local function ReapplyEnemyFrameStyle(self)
+    local fn = self:GetName()
+    if not fn then return end
+
+    local bg = _G[fn .. "Background"]
+    if bg then bg:SetAlpha(0) end
+    local blizzBorder = _G[fn .. "TextureFrameTexture"]
+    if blizzBorder then blizzBorder:SetAlpha(0) end
+
+    if InCombatLockdown() then return end
+
+    UpdateBossFrameBorder(self)
+
+    local portrait = _G[fn .. "Portrait"]
+    if portrait then
+        local unit = self.unit or self:GetAttribute("unit")
+        if unit and UnitExists(unit) then
+            SetPortraitTexture(portrait, unit)
+        end
+    end
+
+    local flashTex = _G[fn .. "Flash"]
+    EnforceFlashStyle(flashTex, self)
+
+    ApplyEliteDecoration(self, portrait)
+
+    local raidTargetIcon = _G[fn .. "TextureFrameRaidTargetIcon"]
+    if raidTargetIcon then
+        raidTargetIcon:SetDrawLayer("OVERLAY", 7)
+        raidTargetIcon:SetSize(24, 24)
+        raidTargetIcon:ClearAllPoints()
+        if portrait then
+            raidTargetIcon:SetPoint("CENTER", portrait, "TOP", 0, 5)
+        end
+    end
+end
+
 -- ============================================================================
 -- POSITION ENFORCEMENT
 -- ============================================================================
@@ -212,15 +264,14 @@ local function CreateSecureBossAnchor(wrapper, bossFrame, bossIndex)
     return anchor
 end
 
-local function HookBossFrameSetPoint(bossFrame, bossIndex)
+local function HookBossFrameSetPoint(bossFrame, positionAnchor)
     if bossFrame.__DragonUI_SetPointHooked then return end
     hooksecurefunc(bossFrame, "SetPoint", function(self, ...)
         if self._DragonUI_SettingPoint or InCombatLockdown() then return end
-        local anchor = BossModule.secureAnchors[bossIndex] or BossModule.wrapperFrames[bossIndex]
-        if not anchor then return end
+        if not positionAnchor then return end
         self._DragonUI_SettingPoint = true
         self:ClearAllPoints()
-        self:SetPoint("TOPLEFT", anchor, "TOPLEFT", 0, 0)
+        self:SetPoint("TOPLEFT", positionAnchor, "TOPLEFT", 0, 0)
         self._DragonUI_SettingPoint = nil
     end)
     bossFrame.__DragonUI_SetPointHooked = true
@@ -230,9 +281,7 @@ end
 -- RESKIN BLIZZARD BOSS FRAME
 -- ============================================================================
 
-local function ReskinBossFrame(wrapperFrame, bossFrame, bossIndex)
-    -- Anchor the Blizzard boss frame to our wrapper
-    local positionAnchor = BossModule.secureAnchors[bossIndex] or wrapperFrame
+local function ReskinBossFrame(positionAnchor, bossFrame)
     bossFrame._DragonUI_SettingPoint = true
     bossFrame:ClearAllPoints()
     bossFrame:SetPoint("TOPLEFT", positionAnchor, "TOPLEFT", 0, 0)
@@ -606,6 +655,11 @@ local function HideBlizzardBossBackgrounds()
         _G.Boss2TargetFrameBackground,
         _G.Boss3TargetFrameBackground,
         _G.Boss4TargetFrameBackground,
+        _G.ArenaEnemyFrame1Background,
+        _G.ArenaEnemyFrame2Background,
+        _G.ArenaEnemyFrame3Background,
+        _G.ArenaEnemyFrame4Background,
+        _G.ArenaEnemyFrame5Background,
     }
     for _, bg in ipairs(backgrounds) do
         if bg then bg:SetAlpha(0) end
@@ -620,9 +674,9 @@ local function HookClassification()
     if BossModule.classificationHooked then return end
 
     hooksecurefunc("TargetFrame_CheckClassification", function(self, forceNormalTexture)
-        -- Only process boss frames
+        -- Only process boss / arena enemy frames
         local frameName = self:GetName()
-        if not frameName or not frameName:match("^Boss%dTargetFrame$") then return end
+        if not IsEnemyFrameName(frameName) then return end
         if InCombatLockdown() then return end
 
         -- Hide Blizzard border (we use our own custom textures)
@@ -709,7 +763,7 @@ local function HookHealthBarColor()
 
     hooksecurefunc("UnitFrameHealthBar_Update", function(statusbar, unit)
         if not statusbar or statusbar.lockValues then return end
-        if not unit or not unit:match("^boss%d$") then return end
+        if not IsEnemyUnitToken(unit) then return end
         if unit ~= statusbar.unit then return end
         if InCombatLockdown() then return end
 
@@ -738,22 +792,27 @@ local function HookTargetFrameUpdate()
 
     local function RefreshBossTargetFrameLayout(self)
         local frameName = self:GetName()
-        if not frameName or not frameName:match("^Boss%dTargetFrame$") then return end
+        if not frameName then return end
 
-        -- Find which wrapper this boss frame belongs to
-        local bossIdx = tonumber(frameName:match("Boss(%d)TargetFrame"))
-        local positionAnchor = bossIdx and
-            (BossModule.secureAnchors[bossIdx] or BossModule.wrapperFrames[bossIdx])
-        if positionAnchor then
-            -- Re-anchor boss frame to our wrapper — Blizzard's TargetFrame_Update
-            -- repositions frames to their default location during combat.
-            -- (SetPoint hook also enforces this, but we double-check here.)
-            self._DragonUI_SettingPoint = true
-            self:ClearAllPoints()
-            self:SetPoint("TOPLEFT", positionAnchor, "TOPLEFT", 0, 0)
-            self:SetHitRectInsets(0, 0, 0, 0)
-            self._DragonUI_SettingPoint = nil
+        -- Find which wrapper this boss/arena frame belongs to
+        local positionAnchor
+        local bossIdx = frameName:match("^Boss(%d)TargetFrame$")
+        local arenaIdx = frameName:match("^ArenaEnemyFrame(%d)$")
+        if bossIdx then
+            positionAnchor = BossModule.secureAnchors[tonumber(bossIdx)] or BossModule.wrapperFrames[tonumber(bossIdx)]
+        elseif arenaIdx then
+            positionAnchor = BossModule.arenaWrapperFrames[tonumber(arenaIdx)]
         end
+        if not positionAnchor then return end
+
+        -- Re-anchor the frame to our wrapper — Blizzard's TargetFrame_Update
+        -- repositions frames to their default location during combat.
+        -- (SetPoint hook also enforces this, but we double-check here.)
+        self._DragonUI_SettingPoint = true
+        self:ClearAllPoints()
+        self:SetPoint("TOPLEFT", positionAnchor, "TOPLEFT", 0, 0)
+        self:SetHitRectInsets(0, 0, 0, 0)
+        self._DragonUI_SettingPoint = nil
 
         -- Re-enforce portrait positioning and refresh texture
         local portrait = _G[frameName .. "Portrait"]
@@ -835,7 +894,7 @@ local function HookTargetFrameUpdate()
         if InCombatLockdown() then
             if addon.CombatQueue and self and self.GetName then
                 local frameName = self:GetName()
-                if frameName and frameName:match("^Boss%dTargetFrame$") then
+                if IsEnemyFrameName(frameName) then
                     addon.CombatQueue:Add("boss_targetframe_update_" .. frameName, function()
                         if self and self.GetName and self:GetName() == frameName and not InCombatLockdown() then
                             RefreshBossTargetFrameLayout(self)
@@ -889,6 +948,28 @@ local function PositionBossFrames()
             end
         end
     end
+
+    for i = 1, NUM_ARENA_FRAMES do
+        local wrapper = BossModule.arenaWrapperFrames[i]
+        if wrapper then
+            wrapper:SetScale(scale)
+
+            if i == 1 then
+                -- Stack below the last boss frame (or overlay if boss frames are absent)
+                local bossLast = BossModule.wrapperFrames[NUM_BOSS_FRAMES]
+                if bossLast then
+                    wrapper:ClearAllPoints()
+                    wrapper:SetPoint("TOP", bossLast, "BOTTOM", 0, 0)
+                elseif BossModule.overlay then
+                    wrapper:ClearAllPoints()
+                    wrapper:SetPoint("TOP", BossModule.overlay, "TOP", 20, 0)
+                end
+            else
+                wrapper:ClearAllPoints()
+                wrapper:SetPoint("TOP", BossModule.arenaWrapperFrames[i - 1], "BOTTOM", 0, 0)
+            end
+        end
+    end
 end
 
 -- ============================================================================
@@ -931,49 +1012,41 @@ local function InitializeBossFrames()
             end
 
             -- Hook SetPoint to block ALL Blizzard repositioning
-            HookBossFrameSetPoint(bossFrame, i)
+            HookBossFrameSetPoint(bossFrame, BossModule.secureAnchors[i] or wrapper)
 
             -- Reskin the Blizzard boss frame
-            ReskinBossFrame(wrapper, bossFrame, i)
+            ReskinBossFrame(BossModule.secureAnchors[i] or wrapper, bossFrame)
 
             -- Hook OnShow to refresh visuals when boss appears
             if not bossFrame.__DragonUI_OnShowHooked then
                 bossFrame:HookScript("OnShow", function(self)
                     if addon.VisibilityFade then addon.VisibilityFade.Update("boss" .. i) end
-                    -- Re-hide Blizzard elements
-                    local fn = self:GetName()
-                    local bg = _G[fn .. "Background"]
-                    if bg then bg:SetAlpha(0) end
-                    local blizzBorder = _G[fn .. "TextureFrameTexture"]
-                    if blizzBorder then blizzBorder:SetAlpha(0) end
-                    if InCombatLockdown() then return end
-                    -- Update border textures
-                    UpdateBossFrameBorder(self)
-                    -- Refresh portrait
-                    local portrait = _G[fn .. "Portrait"]
-                    if portrait then
-                        local unit = self.unit or self:GetAttribute("unit")
-                        if unit and UnitExists(unit) then
-                            SetPortraitTexture(portrait, unit)
-                        end
-                    end
-                    -- Re-enforce flash on show
-                    local flashTex = _G[fn .. "Flash"]
-                    EnforceFlashStyle(flashTex, self)
-                    -- Re-enforce elite decoration on show
-                    ApplyEliteDecoration(self, portrait)
-                    -- Re-enforce raid target icon draw layer on show
-                    local raidTargetIcon = _G[fn .. "TextureFrameRaidTargetIcon"]
-                    if raidTargetIcon then
-                        raidTargetIcon:SetDrawLayer("OVERLAY", 7)
-                        raidTargetIcon:SetSize(24, 24)
-                        raidTargetIcon:ClearAllPoints()
-                        if portrait then
-                            raidTargetIcon:SetPoint("CENTER", portrait, "TOP", 0, 5)
-                        end
-                    end
+                    ReapplyEnemyFrameStyle(self)
                 end)
                 bossFrame.__DragonUI_OnShowHooked = true
+            end
+        end
+    end
+
+    for i = 1, NUM_ARENA_FRAMES do
+        local arenaFrame = _G["ArenaEnemyFrame" .. i]
+        if arenaFrame then
+            local wrapper = CreateFrame("Frame", nil, UIParent)
+            wrapper:SetSize(200, 75)
+            BossModule.arenaWrapperFrames[i] = wrapper
+
+            -- Arena enemy frames (also used for battleground flag carriers) are
+            -- shown/hidden by Blizzard itself, so we do NOT call RegisterUnitWatch
+            -- and we do NOT set the unit attribute (avoids tainting the secure frame).
+            -- Just reskin + reposition and re-apply on show.
+            HookBossFrameSetPoint(arenaFrame, wrapper)
+            ReskinBossFrame(wrapper, arenaFrame)
+
+            if not arenaFrame.__DragonUI_OnShowHooked then
+                arenaFrame:HookScript("OnShow", function(self)
+                    ReapplyEnemyFrameStyle(self)
+                end)
+                arenaFrame.__DragonUI_OnShowHooked = true
             end
         end
     end
@@ -993,7 +1066,7 @@ end
 -- ============================================================================
 
 local function SetupEditorMode()
-    local totalHeight = NUM_BOSS_FRAMES * 75 - 6
+    local totalHeight = (NUM_BOSS_FRAMES + NUM_ARENA_FRAMES) * 75 - 6
     BossModule.overlay = addon.CreateUIFrame(178, totalHeight, "boss")
 
     if BossModule.overlay.editorText then
@@ -1032,6 +1105,13 @@ local function SetupEditorMode()
                     end
                 end
             end
+            -- Show arena enemy frames in test mode
+            for i = 1, NUM_ARENA_FRAMES do
+                local arenaFrame = _G["ArenaEnemyFrame" .. i]
+                if arenaFrame and not InCombatLockdown() and arenaFrame.ShowTest then
+                    arenaFrame:ShowTest()
+                end
+            end
         end,
         hideTest = function()
             for i = 1, NUM_BOSS_FRAMES do
@@ -1040,6 +1120,14 @@ local function SetupEditorMode()
                     RegisterUnitWatch(bossFrame)
                     if bossFrame.HideTest and not UnitExists("boss" .. i) then
                         bossFrame:HideTest()
+                    end
+                end
+            end
+            for i = 1, NUM_ARENA_FRAMES do
+                local arenaFrame = _G["ArenaEnemyFrame" .. i]
+                if arenaFrame and not InCombatLockdown() then
+                    if arenaFrame.HideTest and not UnitExists("arena" .. i) then
+                        arenaFrame:HideTest()
                     end
                 end
             end
@@ -1116,6 +1204,32 @@ local function RefreshRaidTargetIcons()
                 icon:SetDrawLayer("OVERLAY", 7)
                 icon:SetSize(24, 24)
                 local unit = bf.unit or bf:GetAttribute("unit")
+                if unit and UnitExists(unit) then
+                    local idx = GetRaidTargetIndex(unit)
+                    if idx then
+                        SetRaidTargetIconTexture(icon, idx)
+                        icon:Show()
+                    end
+                end
+            end
+        end
+    end
+
+    for i = 1, NUM_ARENA_FRAMES do
+        local af = _G["ArenaEnemyFrame" .. i]
+        if af then
+            local fn = af:GetName()
+            local icon = _G[fn .. "TextureFrameRaidTargetIcon"]
+            local portrait = _G[fn .. "Portrait"]
+            local textureFrame = _G[fn .. "TextureFrame"]
+            local borderFrame = af.DragonUI_BorderFrame
+            if textureFrame and borderFrame then
+                textureFrame:SetFrameLevel(borderFrame:GetFrameLevel() + 2)
+            end
+            if icon and portrait then
+                icon:SetDrawLayer("OVERLAY", 7)
+                icon:SetSize(24, 24)
+                local unit = af.unit or af:GetAttribute("unit")
                 if unit and UnitExists(unit) then
                     local idx = GetRaidTargetIndex(unit)
                     if idx then
@@ -1219,7 +1333,15 @@ function addon.RefreshBossFrames()
         local bossFrame = _G["Boss" .. i .. "TargetFrame"]
         local wrapper = BossModule.wrapperFrames[i]
         if bossFrame and wrapper then
-            ReskinBossFrame(wrapper, bossFrame, i)
+            ReskinBossFrame(BossModule.secureAnchors[i] or wrapper, bossFrame)
+        end
+    end
+
+    for i = 1, NUM_ARENA_FRAMES do
+        local arenaFrame = _G["ArenaEnemyFrame" .. i]
+        local wrapper = BossModule.arenaWrapperFrames[i]
+        if arenaFrame and wrapper then
+            ReskinBossFrame(wrapper, arenaFrame)
         end
     end
 
