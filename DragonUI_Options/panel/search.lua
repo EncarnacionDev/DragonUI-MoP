@@ -1,5 +1,5 @@
 -- DragonUI Options Panel - Search
--- By Neticsoul
+-- By EncarnacionDev
 
 local addon = DragonUI
 if not addon then return end

@@ -1,4 +1,4 @@
--- Copyright (c) 2026 NeticSoul. Licensed under the MIT License; see LICENSE.
+-- Copyright (c) 2026 EncarnacionDev. Licensed under the MIT License; see LICENSE.
 local addon = select(2, ...)
 local NP = addon.Nameplates
 local C = NP.const

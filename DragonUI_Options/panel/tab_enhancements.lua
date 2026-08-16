@@ -274,8 +274,8 @@ local function BuildEnhancementsTab(scroll)
 
     C:AddDropdown(ilvlSection, {
         label = LO["Outline"] or "Outline",
-        desc = LO["Thickness of the black outline. WoW 3.3.5a has no real bold, so a thicker outline is what makes the number look heavier."]
-            or "Thickness of the black outline. WoW 3.3.5a has no real bold, so a thicker outline is what makes the number look heavier.",
+        desc = LO["Thickness of the black outline. WoW 5.4.8 has no real bold, so a thicker outline is what makes the number look heavier."]
+            or "Thickness of the black outline. WoW 5.4.8 has no real bold, so a thicker outline is what makes the number look heavier.",
         values = {
             ["NONE"] = LO["None"] or "None",
             ["OUTLINE"] = LO["Outline"] or "Outline",

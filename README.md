@@ -154,11 +154,5 @@ DragonUI is released under the [MIT License](LICENSE). Bundled third-party compo
 
 ## 📎 Disclaimer
 
-DragonUI is a free, fan-made addon. No content is sold and no in-game advantages are provided. Donations are entirely voluntary. Not affiliated with or endorsed by Blizzard Entertainment.
-
-## ☕ Support The Project
-
-[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/neticsoul)
-
-🪙 Bitcoin: `bc1q8yavz8857lzdfttas584892gf82y0u3wdfjz0a`
+DragonUI is a free, fan-made addon. No content is sold and no in-game advantages are provided. Not affiliated with or endorsed by Blizzard Entertainment.
 

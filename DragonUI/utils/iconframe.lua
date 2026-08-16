@@ -3,7 +3,7 @@
 -- Shared action-bar icon chrome (buttons.lua) for icons that are plain Textures
 -- rather than Buttons: castbars, nameplate castbars.
 --
--- Copyright (c) 2026 NeticSoul. Released under the MIT License.
+-- Copyright (c) 2026 EncarnacionDev. Released under the MIT License.
 -- ============================================================================
 
 local addon = select(2, ...)

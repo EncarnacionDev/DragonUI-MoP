@@ -1,9 +1,9 @@
-﻿local addon = select(2, ...)
+local addon = select(2, ...)
 local L = addon.L
 
 -- ============================================================================
 -- CASTBAR MODULE FOR DRAGONUI
--- Original code by Neticsoul
+-- Original code by EncarnacionDev
 -- ============================================================================
 
 local _G = _G

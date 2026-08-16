@@ -372,17 +372,17 @@ local function BuildGeneralTab(scroll)
     -- ====================================================================
     local about = C:AddSection(scroll, LO["About"])
 
-    C:AddLabel(about, "|cff2dd4bf" .. LO["DragonUI"] .. " v2.5|r")
-    C:AddDescription(about, LO["Bringing the retail WoW look to 3.3.5a, inspired by Dragonflight UI."])
+    C:AddLabel(about, "|cff2dd4bf" .. LO["DragonUI"] .. " v2.5-mop|r")
+    C:AddDescription(about, LO["Bringing the retail WoW look to 5.4.8, inspired by Dragonflight UI."])
     C:AddSpacer(about)
-    C:AddDescription(about, LO["Created and maintained by Neticsoul, with community contributions."])
+    C:AddDescription(about, LO["Created and maintained by EncarnacionDev, with community contributions."])
     C:AddSpacer(about)
     C:AddDescription(about, LO["Use the tabs on the left to configure modules, action bars, unit frames, minimap, and more."])
     C:AddSpacer(about)
     C:AddDescription(about, LO["Commands: /dragonui, /dui, /pi — /dragonui edit (editor) — /dragonui help"])
     C:AddSpacer(about)
     C:AddDescription(about, LO["GitHub (select and Ctrl+C to copy):"])
-    C:AddCopyableText(about, "https://github.com/NeticSoul/DragonUI")
+    C:AddCopyableText(about, "https://github.com/EncarnacionDev/DragonUI-MoP")
 
     C:AddSpacer(scroll)
 

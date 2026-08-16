@@ -3,7 +3,7 @@ name: Bug report
 about: Report a bug to help improve DragonUI.
 title: ''
 labels: ''
-assignees: NeticSoul
+assignees: EncarnacionDev
 
 ---
 

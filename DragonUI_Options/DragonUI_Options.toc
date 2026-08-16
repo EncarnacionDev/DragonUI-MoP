@@ -2,7 +2,7 @@
 ## Title: |cff1784d1DragonUI|r |cffff8000MoP|r |cffffffffOptions|r
 ## Notes: |cffcaf7faConfiguration UI for DragonUI MoP|r
 ## Version: 2.5-mop
-## Author: NeticSoul
+## Author: EncarnacionDev
 ## LoadOnDemand: 1
 ## Dependencies: DragonUI
 ## X-License: MIT for project-authored code; bundled dependencies retain their own licenses

@@ -2,7 +2,7 @@
 ## Title: |cff1784d1DragonUI|r |cffff8000MoP|r
 ## Notes: |cffcaf7faDragonflight-style UI for 5.4.8 with mixed third-party licensing|r
 ## Version: 2.5-mop
-## Author: NeticSoul
+## Author: EncarnacionDev
 ## SavedVariables: DragonUIMoPDB
 ## OptionalDeps: Blizzard_TimeManager
 ## X-License: MIT for project-authored code; bundled dependencies retain their own licenses

@@ -3,7 +3,7 @@ name: Feature request
 about: Suggest an idea or improvement for DragonUI.
 title: ''
 labels: ''
-assignees: NeticSoul
+assignees: EncarnacionDev
 
 ---
 
