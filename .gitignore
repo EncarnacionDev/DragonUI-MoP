@@ -1,0 +1,29 @@
+# macOS
+.DS_Store
+
+# Secrets
+.env
+.env.*
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Backup files
+*.bak
+*.lua.bak
+*.bak2
+*-bk.lua
+
+# Build artifacts
+Addon.rar
+*.rar
+DragonUI-MoP-*.zip
+
+# Original WotLK backup (not part of the MoP distribution)
+DragonUI-WOTLK/
+
+# Temporary atlas tooling
+DragonUI/Textures/Micromenu/convert_blp.py
+DragonUI/Textures/Micromenu/uimicromenu2x.png
