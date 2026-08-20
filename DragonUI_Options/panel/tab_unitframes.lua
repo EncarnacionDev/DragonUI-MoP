@@ -108,6 +108,7 @@ local subTabs = {
     { key = "tot",     label = LO["ToT / ToF"] },
     { key = "party",   label = LO["Party"] },
     { key = "boss",    label = LO["Boss"] },
+    { key = "bgcarrier", label = LO["Battleground Carriers"] },
 }
 
 -- Search navigation sub-tab setter.
@@ -782,6 +783,56 @@ local function BuildBossSection(scroll)
     })
 end
 
+local function BuildBgCarrierSection(scroll)
+    local refreshBgCarrier = function()
+        if addon.RefreshBgCarrierFrames then addon.RefreshBgCarrierFrames() end
+    end
+
+    local s = C:AddSection(scroll, LO["Battleground Carriers"])
+
+    C:AddSlider(s, {
+        label = LO["Scale"],
+        dbPath = "unitframe.bgcarrier.scale",
+        min = 0.5, max = 2.0, step = 0.01,
+        width = 200,
+        callback = refreshBgCarrier,
+    })
+
+    C:AddToggle(s, {
+        label = LO["Show Health Text"],
+        desc = LO["Show the numeric health value on the carrier health bar."],
+        dbPath = "unitframe.bgcarrier.showHealthText",
+        callback = refreshBgCarrier,
+    })
+
+    C:AddDropdown(s, {
+        label = LO["Text Format"],
+        dbPath = "unitframe.bgcarrier.textFormat",
+        values = textFormatValues,
+        callback = refreshBgCarrier,
+    })
+
+    C:AddToggle(s, {
+        label = LO["Format Large Numbers"],
+        dbPath = "unitframe.bgcarrier.breakUpLargeNumbers",
+        callback = refreshBgCarrier,
+    })
+
+    C:AddToggle(s, {
+        label = LO["Class Color Name"],
+        desc = LO["Color the carrier name by class instead of yellow."],
+        dbPath = "unitframe.bgcarrier.classColor",
+        callback = refreshBgCarrier,
+    })
+
+    C:AddToggle(s, {
+        label = LO["Class Color Health"],
+        desc = LO["Color the carrier health bar fill by class instead of white."],
+        dbPath = "unitframe.bgcarrier.classColorHealth",
+        callback = refreshBgCarrier,
+    })
+end
+
 -- ============================================================================
 -- SUB-TAB DISPATCH
 -- ============================================================================
@@ -794,6 +845,7 @@ local subTabBuilders = {
     tot    = BuildToTSection,
     party  = BuildPartySection,
     boss   = BuildBossSection,
+    bgcarrier = BuildBgCarrierSection,
 }
 
 -- ============================================================================

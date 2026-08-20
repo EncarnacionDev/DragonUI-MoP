@@ -10,7 +10,7 @@ These are general-purpose functions that can be used by any module.
 local addon = select(2, ...)
 local L = addon.L
 
-addon.DB_SCHEMA_VERSION = 3
+addon.DB_SCHEMA_VERSION = 4
 addon.RELEASE_VERSION = GetAddOnMetadata("DragonUI", "Version") or "2.5"
 
 -- ============================================================================
@@ -600,6 +600,13 @@ local MODULE_LIFECYCLE_OVERRIDES = {
         loadOnce = true,
         isEnabled = function()
             return addon.UF and addon.UF.IsEnabled and addon.UF.IsEnabled("boss")
+        end,
+    },
+    bgcarrier = {
+        refresh = "RefreshBgCarrierFrames",
+        loadOnce = true,
+        isEnabled = function()
+            return addon.UF and addon.UF.IsEnabled and addon.UF.IsEnabled("bgcarrier")
         end,
     },
     buffs = {

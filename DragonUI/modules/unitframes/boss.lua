@@ -37,17 +37,16 @@ end
 -- ============================================================================
 
 local NUM_BOSS_FRAMES = 4
-local NUM_ARENA_FRAMES = 5
 
--- Boss frames (Boss1-4TargetFrame) and arena enemy frames (ArenaEnemyFrame1-5,
--- reused by Blizzard for battleground flag carriers) share the target-style reskin.
+-- Boss frames only. Battleground flag/orb/cart carriers (ArenaEnemyFrame1-5 in
+-- MoP 5.4.8) are handled by the separate bgcarrier module.
 local function IsEnemyFrameName(frameName)
     return frameName
-        and (frameName:match("^Boss%dTargetFrame$") or frameName:match("^ArenaEnemyFrame%d$"))
+        and frameName:match("^Boss%dTargetFrame$")
 end
 
 local function IsEnemyUnitToken(unit)
-    return unit and (unit:match("^boss%d$") or unit:match("^arena%d$"))
+    return unit and unit:match("^boss%d$")
 end
 
 -- ============================================================================
@@ -56,7 +55,6 @@ end
 
 local BossModule = UF.CreateModule("boss")
 BossModule.wrapperFrames = {} -- editor wrapper frames indexed 1-4
-BossModule.arenaWrapperFrames = {} -- arena enemy wrapper frames indexed 1-5
 BossModule.secureAnchors = {}
 BossModule.configured = false
 
@@ -196,8 +194,8 @@ local function EnforceFlashStyle(flashTex, parentFrame)
     if flashTex:IsShown() then mirror:Show() else mirror:Hide() end
 end
 
--- Re-apply DragonUI styling when a boss/arena frame is shown. Shared by the
--- boss and arena OnShow hooks so Blizzard's native re-show doesn't strip it.
+-- Re-apply DragonUI styling when a boss frame is shown. Used by the boss
+-- OnShow hook so Blizzard's native re-show doesn't strip it.
 local function ReapplyEnemyFrameStyle(self)
     local fn = self:GetName()
     if not fn then return end
@@ -655,11 +653,6 @@ local function HideBlizzardBossBackgrounds()
         _G.Boss2TargetFrameBackground,
         _G.Boss3TargetFrameBackground,
         _G.Boss4TargetFrameBackground,
-        _G.ArenaEnemyFrame1Background,
-        _G.ArenaEnemyFrame2Background,
-        _G.ArenaEnemyFrame3Background,
-        _G.ArenaEnemyFrame4Background,
-        _G.ArenaEnemyFrame5Background,
     }
     for _, bg in ipairs(backgrounds) do
         if bg then bg:SetAlpha(0) end
@@ -674,7 +667,7 @@ local function HookClassification()
     if BossModule.classificationHooked then return end
 
     hooksecurefunc("TargetFrame_CheckClassification", function(self, forceNormalTexture)
-        -- Only process boss / arena enemy frames
+        -- Only process boss frames
         local frameName = self:GetName()
         if not IsEnemyFrameName(frameName) then return end
         if InCombatLockdown() then return end
@@ -794,14 +787,11 @@ local function HookTargetFrameUpdate()
         local frameName = self:GetName()
         if not frameName then return end
 
-        -- Find which wrapper this boss/arena frame belongs to
+        -- Find which wrapper this boss frame belongs to
         local positionAnchor
         local bossIdx = frameName:match("^Boss(%d)TargetFrame$")
-        local arenaIdx = frameName:match("^ArenaEnemyFrame(%d)$")
         if bossIdx then
             positionAnchor = BossModule.secureAnchors[tonumber(bossIdx)] or BossModule.wrapperFrames[tonumber(bossIdx)]
-        elseif arenaIdx then
-            positionAnchor = BossModule.arenaWrapperFrames[tonumber(arenaIdx)]
         end
         if not positionAnchor then return end
 
@@ -948,28 +938,6 @@ local function PositionBossFrames()
             end
         end
     end
-
-    for i = 1, NUM_ARENA_FRAMES do
-        local wrapper = BossModule.arenaWrapperFrames[i]
-        if wrapper then
-            wrapper:SetScale(scale)
-
-            if i == 1 then
-                -- Stack below the last boss frame (or overlay if boss frames are absent)
-                local bossLast = BossModule.wrapperFrames[NUM_BOSS_FRAMES]
-                if bossLast then
-                    wrapper:ClearAllPoints()
-                    wrapper:SetPoint("TOP", bossLast, "BOTTOM", 0, 0)
-                elseif BossModule.overlay then
-                    wrapper:ClearAllPoints()
-                    wrapper:SetPoint("TOP", BossModule.overlay, "TOP", 20, 0)
-                end
-            else
-                wrapper:ClearAllPoints()
-                wrapper:SetPoint("TOP", BossModule.arenaWrapperFrames[i - 1], "BOTTOM", 0, 0)
-            end
-        end
-    end
 end
 
 -- ============================================================================
@@ -1028,29 +996,6 @@ local function InitializeBossFrames()
         end
     end
 
-    for i = 1, NUM_ARENA_FRAMES do
-        local arenaFrame = _G["ArenaEnemyFrame" .. i]
-        if arenaFrame then
-            local wrapper = CreateFrame("Frame", nil, UIParent)
-            wrapper:SetSize(200, 75)
-            BossModule.arenaWrapperFrames[i] = wrapper
-
-            -- Arena enemy frames (also used for battleground flag carriers) are
-            -- shown/hidden by Blizzard itself, so we do NOT call RegisterUnitWatch
-            -- and we do NOT set the unit attribute (avoids tainting the secure frame).
-            -- Just reskin + reposition and re-apply on show.
-            HookBossFrameSetPoint(arenaFrame, wrapper)
-            ReskinBossFrame(wrapper, arenaFrame)
-
-            if not arenaFrame.__DragonUI_OnShowHooked then
-                arenaFrame:HookScript("OnShow", function(self)
-                    ReapplyEnemyFrameStyle(self)
-                end)
-                arenaFrame.__DragonUI_OnShowHooked = true
-            end
-        end
-    end
-
     HookClassification()
     HookHealthBarColor()
     HookTargetFrameUpdate()
@@ -1066,7 +1011,7 @@ end
 -- ============================================================================
 
 local function SetupEditorMode()
-    local totalHeight = (NUM_BOSS_FRAMES + NUM_ARENA_FRAMES) * 75 - 6
+    local totalHeight = NUM_BOSS_FRAMES * 75 - 6
     BossModule.overlay = addon.CreateUIFrame(178, totalHeight, "boss")
 
     if BossModule.overlay.editorText then
@@ -1105,13 +1050,6 @@ local function SetupEditorMode()
                     end
                 end
             end
-            -- Show arena enemy frames in test mode
-            for i = 1, NUM_ARENA_FRAMES do
-                local arenaFrame = _G["ArenaEnemyFrame" .. i]
-                if arenaFrame and not InCombatLockdown() and arenaFrame.ShowTest then
-                    arenaFrame:ShowTest()
-                end
-            end
         end,
         hideTest = function()
             for i = 1, NUM_BOSS_FRAMES do
@@ -1120,14 +1058,6 @@ local function SetupEditorMode()
                     RegisterUnitWatch(bossFrame)
                     if bossFrame.HideTest and not UnitExists("boss" .. i) then
                         bossFrame:HideTest()
-                    end
-                end
-            end
-            for i = 1, NUM_ARENA_FRAMES do
-                local arenaFrame = _G["ArenaEnemyFrame" .. i]
-                if arenaFrame and not InCombatLockdown() then
-                    if arenaFrame.HideTest and not UnitExists("arena" .. i) then
-                        arenaFrame:HideTest()
                     end
                 end
             end
@@ -1204,32 +1134,6 @@ local function RefreshRaidTargetIcons()
                 icon:SetDrawLayer("OVERLAY", 7)
                 icon:SetSize(24, 24)
                 local unit = bf.unit or bf:GetAttribute("unit")
-                if unit and UnitExists(unit) then
-                    local idx = GetRaidTargetIndex(unit)
-                    if idx then
-                        SetRaidTargetIconTexture(icon, idx)
-                        icon:Show()
-                    end
-                end
-            end
-        end
-    end
-
-    for i = 1, NUM_ARENA_FRAMES do
-        local af = _G["ArenaEnemyFrame" .. i]
-        if af then
-            local fn = af:GetName()
-            local icon = _G[fn .. "TextureFrameRaidTargetIcon"]
-            local portrait = _G[fn .. "Portrait"]
-            local textureFrame = _G[fn .. "TextureFrame"]
-            local borderFrame = af.DragonUI_BorderFrame
-            if textureFrame and borderFrame then
-                textureFrame:SetFrameLevel(borderFrame:GetFrameLevel() + 2)
-            end
-            if icon and portrait then
-                icon:SetDrawLayer("OVERLAY", 7)
-                icon:SetSize(24, 24)
-                local unit = af.unit or af:GetAttribute("unit")
                 if unit and UnitExists(unit) then
                     local idx = GetRaidTargetIndex(unit)
                     if idx then
@@ -1334,14 +1238,6 @@ function addon.RefreshBossFrames()
         local wrapper = BossModule.wrapperFrames[i]
         if bossFrame and wrapper then
             ReskinBossFrame(BossModule.secureAnchors[i] or wrapper, bossFrame)
-        end
-    end
-
-    for i = 1, NUM_ARENA_FRAMES do
-        local arenaFrame = _G["ArenaEnemyFrame" .. i]
-        local wrapper = BossModule.arenaWrapperFrames[i]
-        if arenaFrame and wrapper then
-            ReskinBossFrame(wrapper, arenaFrame)
         end
     end
 

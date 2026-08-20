@@ -753,6 +753,23 @@ local defaults = {
                 show_on_hover = false,
                 show_in_combat = false,
                 visibility_logic = "and",
+            },
+            bgcarrier = {
+                enabled = true,
+                scale = 1.0,
+                override = false,
+                anchor = 'TOPRIGHT',
+                anchorParent = 'TOPRIGHT',
+                x = -85,
+                y = -180,
+                show_on_hover = false,
+                show_in_combat = false,
+                visibility_logic = "and",
+                showHealthText = false,
+                classColor = false,
+                classColorHealth = false,
+                breakUpLargeNumbers = true,
+                textFormat = 'both',
             }
         },
 

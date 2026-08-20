@@ -28,8 +28,11 @@ To reset all settings: delete `WTF/Account/<Account>/SavedVariables/DragonUIMoPD
 - **Vehicle bar disabled**: `modules/actionbars/vehicle.lua` is commented out of `actionbars/actionbars.xml`. MoP uses `OverrideActionBar` instead of `VehicleMenuBar`.
 - **Multicast/totem bar disabled**: `modules/actionbars/multicast.lua` is commented out. The shaman totem bar does not exist in MoP.
 - **Group APIs**: replaced `GetNumPartyMembers` / `GetNumRaidMembers` with `IsInGroup` / `IsInRaid` / `GetNumGroupMembers` via helpers in `core/api.lua`.
-- **Resize APIs**: replaced `SetMinResize` / `SetMaxResize` with `SetResizeBounds`.
-- **Casting APIs**: adjusted `UnitCastingInfo` / `UnitChannelInfo` unpacks for the MoP return-value order.
+- **Resize APIs**: `SetResizeBounds` does **not** exist in MoP 5.4.8 — code keeps `SetMinResize` / `SetMaxResize` (see `MIGRATION_PLAN.md`, which supersedes an earlier, wrong claim).
+- **Casting APIs**: `UnitCastingInfo` / `UnitChannelInfo` unpacks follow the WotLK-format (9/8 returns incl. `nameSubtext`), because this private server returns that, **not** standard MoP's 8/7-value order.
+- **Power events**: MoP uses `UNIT_POWER` / `UNIT_MAXPOWER` (carrying a `powerType` token); per-school events (`UNIT_MANA`, `UNIT_RAGE`, …) are kept as fallback because private servers may still fire them. `UNIT_HAPPINESS` was removed.
+
+**`MIGRATION_PLAN.md`** (Spanish) is the running log of every WotLK→MoP fix. Check it first when a module misbehaves — it records private-server quirks (WotLK-format cast returns, `WatchFrame` still used, hex GUIDs in CLEU, etc.).
 
 ## Load Order
 
@@ -50,6 +53,7 @@ If you add a file, you **must** register it in the relevant `.toc` or `.xml`.
 - `addon.db` is an AceDB-3.0 profile DB backed by `DragonUIMoPDB` SavedVariables.
 - `addon.config` is a metatable proxy that routes reads to `addon.db.profile` and static assets.
 - `addon.ModuleRegistry` (`core/api.lua`) is the canonical module system.
+- `addon.DB_SCHEMA_VERSION` + `addon:ApplyDatabaseMigrations()` (both in `core/api.lua`) gate profile upgrades — bump the version and add a migration when changing defaults/schema.
 
 ## Common Commands
 
@@ -60,7 +64,10 @@ If you add a file, you **must** register it in the relevant `.toc` or `.xml`.
 | `/dragonui reset` | Reset all positions |
 | `/dragonui status` | Module registry status |
 | `/dragonui debug on` | Enable diagnostic logs |
+| `/dragonui kb` | Toggle keybind mode |
 | `/rl` | Reload UI |
+
+Extra user commands (registered elsewhere): `/sort` (bag sort), `/tt <msg>` (whisper target), `/duicomp` (compat diagnostics). Many debug subcommands (`debugvehicle`, `ufl`, `npclamp`, `debugshadow`, `shadowcolor`, `shadowcrop`, `shadowtest`) exist in `core/commands.lua` and require `/dragonui debug on` first.
 
 ## Known Disabled / Broken Areas
 

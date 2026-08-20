@@ -170,6 +170,17 @@ En progreso. Este archivo documenta los bugs encontrados y los fixes planificado
 - `DragonUI/modules/minimap.lua`: `StyleQueueStatusButton()` vuelve a sincronizar el holder con `QueueStatusMinimapButton:IsShown()`; al no haber hook `OnHide`, el holder permanece visible cuando el mapa oculta el minimapa nativo.
 - `DragonUI/modules/minimap.lua`: añadido evento `WORLD_MAP_UPDATE` al frame de eventos de cola para refrescar la visibilidad del holder al abrir/cerrar el mapa.
 
+### 2026-08-18 — Frame de portadores de bandera/orbe/cart en BG (nuevo módulo bgcarrier)
+- Diagnóstico: en MoP 5.4.8 los portadores de bandera/orbe/cart de BG se muestran con los frames nativos `ArenaEnemyFrame1..5` (unidades `arena1..arena5`), definidos en el addon de carga diferida `Blizzard_ArenaUI`. El reskin de arena de `boss.lua` nunca funcionó porque (a) los frames no existen al hacer `PLAYER_ENTERING_WORLD` y (b) asumía la estructura de subframes de los bosses (`TextureFrameName`, `Portrait`, `Flash`…) que `ArenaEnemyFrame` no tiene.
+- `DragonUI/modules/unitframes/boss.lua`: revertida la rama de arena (frames solo de boss). Eliminado `NUM_ARENA_FRAMES`, `arenaWrapperFrames` y los bucles de arena en `InitializeBossFrames`/`PositionBossFrames`/`RefreshBossFrames`/`RefreshRaidTargetIcons`/`SetupEditorMode`. Esto también corrige el "frame muy abajo" (ya no se apilan bajo los bosses).
+- `DragonUI/modules/unitframes/bgcarrier.lua` (NUEVO): módulo que dibuja frames propios compactos alimentados por `arena1..5` + `ARENA_OPPONENT_UPDATE`, mostrándolos solo en battlegrounds (`instanceType == "pvp"`). Oculta el nativo vía `SetCVar("showArenaEnemyFrames", "0")`. Posición independiente (overlay editable con `/dragonui edit`), por defecto `TOPRIGHT (-85, -180)`.
+- `DragonUI/modules/unitframes/unitframes.xml`: registrado `bgcarrier.lua` tras `boss.lua`.
+- `DragonUI/database.lua`: defaults de `unitframe.bgcarrier` (enabled/scale/override/anchor/x/y).
+- `DragonUI/core/api.lua`: `MODULE_LIFECYCLE_OVERRIDES.bgcarrier` (refresh `RefreshBgCarrierFrames`, loadOnce, isEnabled vía `UF.IsEnabled("bgcarrier")`).
+- Locales `enUS`/`esES`/`esMX`: cadenas de `Battleground Carriers`.
+- Ajustes posteriores: diseño `targetStyle` (texturas/retrato/borde del boss frame) con ancho 232 (el de `TargetFrameTemplate` en 5.4.8); frames como `SecureUnitButtonTemplate` (`*type1="target"`, `*type2="togglemenu"`) para targetear al carrier; y polling `OnUpdate` (0.1s) de `UnitHealth`/`UnitPower` porque `UNIT_HEALTH` no se dispara para unidades de arena "vistas" (mismo patrón que el `frequentUpdates` del frame nativo).
+- Indicador de control de masas (CC): MoP 5.4.8 no tiene API nativa (`ARENA_CROWD_CONTROL_SPELL_UPDATE`/`ARENA_COOLDOWNS_UPDATE`/`GetArenaCrowdControlInfo` son de Legion 7.2; `C_LossOfControl` es de 6.0 y solo del jugador). Se detecta escaneando `UnitAura(unit, i, "HARMFUL")` y comparando el `spellId` (11º retorno) contra una tabla `CC_SPELLS` de CCs comunes; se muestra un icono + barrido `Cooldown` sobre el retrato con `expirationTime`/`duration`.
+
 ## Hallazgos clave que cambian el scope
 
 - **Quest tracker:** este cliente 5.4.8 todavía usa `WatchFrame`. No es necesario migrar a `ObjectiveTrackerFrame`. El trabajo es adaptar el código de DragonUI a la versión MoP de `WatchFrame`.

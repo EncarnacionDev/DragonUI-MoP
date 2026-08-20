@@ -1142,6 +1142,15 @@ L["Custom styling for party member frames with automatic health/mana text displa
 L["Boss Frames"] = true
 L["Enabled"] = true
 
+-- Battleground Carriers
+L["Battleground Carriers"] = true
+L["Show Health Text"] = true
+L["Class Color Name"] = true
+L["Class Color Health"] = true
+L["Show the numeric health value on the carrier health bar."] = true
+L["Color the carrier name by class instead of yellow."] = true
+L["Color the carrier health bar fill by class instead of white."] = true
+
 L["Orientation"] = true
 L["Vertical"] = true
 L["Horizontal"] = true

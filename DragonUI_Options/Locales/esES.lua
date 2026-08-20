@@ -1075,6 +1075,15 @@ L["Custom styling for party member frames with automatic health/mana text displa
 L["Boss Frames"] = "Marcos de Jefe"
 L["Enabled"] = "Activado"
 
+-- Battleground Carriers
+L["Battleground Carriers"] = "Portadores de Campo de Batalla"
+L["Show Health Text"] = "Mostrar texto de vida"
+L["Class Color Name"] = "Nombre con color de clase"
+L["Class Color Health"] = "Vida con color de clase"
+L["Show the numeric health value on the carrier health bar."] = "Muestra el valor numérico de vida en la barra de vida del portador."
+L["Color the carrier name by class instead of yellow."] = "Colorea el nombre del portador por clase en lugar de amarillo."
+L["Color the carrier health bar fill by class instead of white."] = "Colorea el relleno de la barra de vida del portador según su clase en lugar de blanco."
+
 L["Orientation"] = "Orientación"
 L["Vertical"] = "Vertical"
 L["Horizontal"] = "Horizontal"
