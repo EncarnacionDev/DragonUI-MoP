@@ -1139,6 +1139,9 @@ local defaults = {
             },
             versioncheck = {
                 enabled = true, -- Cross-player version broadcast and update detection
+            },
+            blizzardart = {
+                enabled = true, -- DragonUI metal chrome on Blizzard panels (SpellBook, etc.)
             }
         },
 
