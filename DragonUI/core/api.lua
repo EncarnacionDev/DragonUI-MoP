@@ -10,7 +10,7 @@ These are general-purpose functions that can be used by any module.
 local addon = select(2, ...)
 local L = addon.L
 
-addon.DB_SCHEMA_VERSION = 9
+addon.DB_SCHEMA_VERSION = 10
 addon.RELEASE_VERSION = GetAddOnMetadata("DragonUI", "Version") or "2.5"
 
 -- ============================================================================
@@ -1303,6 +1303,16 @@ function addon:ApplyDatabaseMigrations()
 
     if currentVersion < self.DB_SCHEMA_VERSION then
         ApplyMissingDefaults(self.defaults.profile, profile)
+    end
+
+    -- Schema 10: the "New Blip Style" atlas does not match the MoP POI cells
+    -- (renders solid shapes). Force the native Blizzard style once for existing
+    -- profiles. Gated on the literal version so it never re-runs on later bumps.
+    if currentVersion < 10 then
+        local minimapCfg = rawget(profile, "minimap")
+        if type(minimapCfg) == "table" then
+            minimapCfg.blip_skin = false
+        end
     end
 
     -- Combuctor → Bagster rename. AceDB already rawset a default `bagster` table at :New, so we

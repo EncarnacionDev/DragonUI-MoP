@@ -495,7 +495,7 @@ local defaults = {
         minimap = {
             scale = 1,
             border_alpha = 1,
-            blip_skin = true, -- true = new/modern style, false = old/classic Blizzard style
+            blip_skin = false, -- false = native Blizzard atlas (custom atlas is incompatible with MoP POI cells)
             tracking_icons = true,
             zoom_buttons = false,
             calendar = true,

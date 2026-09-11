@@ -95,6 +95,11 @@ En progreso. Este archivo documenta los bugs encontrados y los fixes planificado
 - `DragonUI/modules/minimap.lua`: default de `blip_skin` cambiado a `false` para usar la textura nativa `Interface\Minimap\ObjectIcons` en MoP 5.4.8.
 - El atlas custom de DragonUI no incluye los iconos de quest POI (interrogaciones/admiraciones) que MoP renderiza desde `ObjectIcons`, por lo que con la textura custom aparecían figuras geométricas.
 
+### 2026-09-11 — "New Blip Style" forzado a OFF + reset de perfiles
+- `DragonUI/database.lua`: default de `blip_skin` corregido a `false` (seguía en `true`, contradiciendo la nota del 2026-08-09).
+- `DragonUI/modules/minimap.lua`: unificados los fallbacks `nil` de `blip_skin` a `false` (`ReapplyMinimapTextures` y `UpdateSettings` caían a `true`).
+- `DragonUI/core/api.lua`: `DB_SCHEMA_VERSION` 9→10 con migración que fuerza `minimap.blip_skin = false` una vez en perfiles existentes.
+
 ### 2026-08-10 — Botón PVP custom, fix de colored icons y placeholder de Collections
 - `DragonUI/modules/micromenu.lua`: creado `DragonUIPVPMicroButton` como botón custom para MoP (el botón nativo `PVPMicroButton` fue removido en 5.x).
 - `DragonUI/modules/micromenu.lua`: el botón PVP custom se inserta antes de `StoreMicroButton`, usa la textura de facción `Micromenu/micropvp.blp` y abre el panel **Player vs. Player** (`TogglePVPFrame()`).

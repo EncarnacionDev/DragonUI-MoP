@@ -761,7 +761,7 @@ local function ReplaceBlizzardFrame(frame)
         MinimapModule.ReapplyMinimapTextures = function()
             local useNew = addon.db and addon.db.profile and addon.db.profile.minimap and
                                addon.db.profile.minimap.blip_skin
-            if useNew == nil then useNew = true end
+            if useNew == nil then useNew = false end
 
             local tex = useNew and "Interface\\AddOns\\DragonUI\\Textures\\Minimap\\objecticons" or
                             'Interface\\Minimap\\ObjectIcons'
@@ -2815,7 +2815,7 @@ function MinimapModule:UpdateSettings()
         -- Apply blip texture based on user setting (new vs old style)
         local useNewBlipStyle = addon.db.profile.minimap.blip_skin
         if useNewBlipStyle == nil then
-            useNewBlipStyle = true -- Default to new style
+            useNewBlipStyle = false -- Default to native Blizzard style
         end
 
         local blipTexture = useNewBlipStyle and "Interface\\AddOns\\DragonUI\\Textures\\Minimap\\objecticons" or
