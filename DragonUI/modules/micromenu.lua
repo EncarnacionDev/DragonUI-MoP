@@ -572,8 +572,13 @@ end
 local function IsAnyShown(...)
     for i = 1, select("#", ...) do
         local f = select(i, ...)
-        if f and f.IsVisible and f:IsVisible() then
-            return true
+        if f then
+            -- pcall: some panels (e.g. StoreFrame) are forbidden frames and
+            -- error if addon-tainted code calls methods on them.
+            local ok, shown = pcall(f.IsShown, f)
+            if ok and shown then
+                return true
+            end
         end
     end
     return false
@@ -604,7 +609,8 @@ local function IsSpecialMicroButtonActive(button, buttonName)
     elseif key == "ej" then
         return IsAnyShown(_G.EncounterJournal)
     elseif key == "store" then
-        return IsAnyShown(_G.StoreFrame)
+        -- StoreFrame is a forbidden frame; don't query it (no safe API in MoP).
+        return false
     elseif key == "mainmenu" then
         return IsAnyShown(_G.GameMenuFrame)
     elseif key == "pvp" then
