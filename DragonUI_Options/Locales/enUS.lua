@@ -999,6 +999,8 @@ L["Horizontal position offset"] = true
 L["Vertical position offset"] = true
 L["Reset quest tracker to default position"] = true
 L["Font size for quest tracker text"] = true
+L["Max Height"] = true
+L["Maximum height of the quest tracker in pixels."] = true
 
 -- ============================================================================
 -- UNIT FRAMES TAB

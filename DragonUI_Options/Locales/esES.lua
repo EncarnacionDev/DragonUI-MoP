@@ -932,6 +932,8 @@ L["Horizontal position offset"] = "Desfase de posición horizontal"
 L["Vertical position offset"] = "Desfase de posición vertical"
 L["Reset quest tracker to default position"] = "Restablecer el rastreador de misiones a la posición predeterminada"
 L["Font size for quest tracker text"] = "Tamaño de fuente para el texto del rastreador de misiones"
+L["Max Height"] = "Altura máxima"
+L["Maximum height of the quest tracker in pixels."] = "Altura máxima del rastreador de misiones en píxeles."
 
 -- ============================================================================
 -- UNIT FRAMES TAB

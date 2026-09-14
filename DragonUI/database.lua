@@ -188,6 +188,7 @@ local defaults = {
             y = -255,
             show_header = true,
             font_size = 12,      -- Point size for quest tracker text (WoW default: 11)
+            max_height = 400,    -- Max tracker height in px (was fixed 600; lower lets it sit at the bottom)
             show_on_hover = false,
             show_in_combat = false,
             hide_in_combat = false,
