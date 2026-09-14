@@ -243,8 +243,11 @@ end
 -- TAB SKIN (retail tab art, same pieces as the DragonUI bag tabs)
 -- ============================================================================
 
-local function SkinTab(btn, compact)
-    if not btn or not btn.GetName or btn._duiTabSkins then return false end
+-- (Re)applies the DragonUI tab art and configured dimensions. Idempotent: it
+-- can run again to restore the height/width after Blizzard re-lays the row
+-- (e.g. the Pet tab appearing/disappearing).
+local function ApplyTabArt(btn, compact)
+    if not btn or not btn.GetName then return false end
     local name = btn:GetName()
     if not name then return false end
 
@@ -259,8 +262,6 @@ local function SkinTab(btn, compact)
         h, hD = SUB_TAB_H, SUB_TAB_H + 4
     end
 
-    btn._duiTabSkins = true
-    btn:SetFrameLevel(btn:GetFrameLevel() + 4)
     EnsureTabFonts()
     if compact then
         btn:SetNormalFontObject(tabSubFontNormal)
@@ -323,6 +324,18 @@ local function SkinTab(btn, compact)
         btn:SetWidth(math.max(textW + TAB_PAD_H * 2, TAB_MIN_WIDTH))
     end
 
+    return true
+end
+
+-- One-time skin: bump the frame level once, then (re)apply the art. Safe to
+-- call repeatedly: already-skinned tabs just get their dimensions restored.
+local function SkinTab(btn, compact)
+    if not btn or not btn.GetName then return false end
+    if not ApplyTabArt(btn, compact) then return false end
+    if not btn._duiTabSkins then
+        btn._duiTabSkins = true
+        btn:SetFrameLevel(btn:GetFrameLevel() + 4)
+    end
     return true
 end
 
@@ -683,8 +696,10 @@ local function SkinTalentTabs(f)
                     -- Text tab: apply the bottom-tab look once and always keep
                     -- the same width as the SpellBook tabs (recompute each Show).
                     if not child._duiTalentChild then
-                        child._duiTalentChild = true
-                        pcall(SkinTab, child)
+                        local ok, res = pcall(SkinTab, child)
+                        child._duiTalentChild = ok and res
+                    elseif child._duiTabSkins then
+                        ApplyTabArt(child)
                     end
                     ApplyTabPaddingWidth(child)
                 elseif child.GetNormalTexture and child:GetNormalTexture() then
@@ -827,8 +842,10 @@ local function SkinCharacterTabs()
         local tab = _G['CharacterFrameTab' .. i]
         if tab and tab.IsObjectType and tab:IsObjectType('Button') then
             if not tab._duiCharTab then
-                tab._duiCharTab = true
-                pcall(SkinTab, tab)
+                local ok, res = pcall(SkinTab, tab)
+                tab._duiCharTab = ok and res
+            elseif tab._duiTabSkins then
+                ApplyTabArt(tab)
             end
             if not tab._duiCharClick then
                 tab._duiCharClick = true
@@ -869,6 +886,45 @@ local function ApplyCharacterFrame()
 
     SkinCharacterTabs()
     return true
+end
+
+-- ============================================================================
+-- TAB LAYOUT RE-APPLY (pet appear/disappear, Blizzard tab re-layouts)
+-- ============================================================================
+
+-- Re-applies the configured tab width, art height and spacing across the
+-- Character, Spellbook and Talent windows. Cheap and idempotent; runs after
+-- Blizzard touches the tabs so its own resize never wins.
+local function ReapplyTabLayouts()
+    if InCombatLockdown() then return end
+
+    SkinCharacterTabs()
+    RepositionSpellBookTabs()
+    SkinSpellBookBottomTabs()
+    SkinCoreSpecTabs()
+
+    local f = FindTalentFrame()
+    if f then
+        SkinTalentTabs(f)
+        RefreshTalentTabWidths()
+    end
+end
+
+local reapplyScheduled = false
+local function ScheduleReapplyTabLayouts()
+    if reapplyScheduled then return end
+    reapplyScheduled = true
+
+    local function run()
+        reapplyScheduled = false
+        ReapplyTabLayouts()
+    end
+
+    if addon.core and addon.core.ScheduleTimer then
+        addon.core:ScheduleTimer(run, 0)
+    else
+        run()
+    end
 end
 
 -- ============================================================================
@@ -1540,6 +1596,8 @@ local eventFrame = CreateFrame('Frame')
 local showHooked, updateHooked, coreUpdateHooked
 local talentShowHooked, talentToggleHooked, talentUpdateHooked
 local charShowHooked, questShowHooked
+local tabResizeHooked, tabUpdateHooked
+local charUpdateHooked, spellUpdateHooked
 local HookTalentTabUpdates
 
 -- Declared above via `local HookTalentTabUpdates`; assigned here.
@@ -1627,6 +1685,20 @@ local function HookTalentToggle()
     end)
 end
 
+-- Hook the OnShow/OnHide of a family of tab buttons (CharacterFrameTab1..N,
+-- SpellBookFrameTabButton1..N, PlayerTalentFrameTab1..N) so a tab becoming
+-- visible/hidden (e.g. the Pet tab when mounting) re-applies the row layout.
+local function HookTabVisibility(prefix, maxTabs)
+    for i = 1, maxTabs do
+        local tab = _G[prefix .. i]
+        if tab and tab.HookScript and not tab._duiTabVisHooked then
+            tab._duiTabVisHooked = true
+            tab:HookScript('OnShow', ScheduleReapplyTabLayouts)
+            tab:HookScript('OnHide', ScheduleReapplyTabLayouts)
+        end
+    end
+end
+
 local function InstallFrameHooks()
     if not showHooked and _G.SpellBookFrame and hooksecurefunc then
         showHooked = true
@@ -1652,6 +1724,29 @@ local function InstallFrameHooks()
             end
         end)
     end
+    -- Blizzard re-lays the tab row on resize/update (e.g. the Pet tab
+    -- appearing/disappearing): re-apply our width/height/spacing afterwards.
+    if not tabResizeHooked and _G.PanelTemplates_TabResize and hooksecurefunc then
+        tabResizeHooked = true
+        hooksecurefunc('PanelTemplates_TabResize', ScheduleReapplyTabLayouts)
+    end
+    if not tabUpdateHooked and _G.PanelTemplates_UpdateTabs and hooksecurefunc then
+        tabUpdateHooked = true
+        hooksecurefunc('PanelTemplates_UpdateTabs', ScheduleReapplyTabLayouts)
+    end
+    if not charUpdateHooked and _G.CharacterFrame_UpdateTabs and hooksecurefunc then
+        charUpdateHooked = true
+        hooksecurefunc('CharacterFrame_UpdateTabs', ScheduleReapplyTabLayouts)
+    end
+    if not spellUpdateHooked and _G.SpellBookFrame_UpdateTabs and hooksecurefunc then
+        spellUpdateHooked = true
+        hooksecurefunc('SpellBookFrame_UpdateTabs', ScheduleReapplyTabLayouts)
+    end
+
+    HookTabVisibility('CharacterFrameTab', 8)
+    HookTabVisibility('SpellBookFrameTabButton', 5)
+    HookTabVisibility('PlayerTalentFrameTab', 8)
+
     -- Talents (N): lazy Show hook + opener hook so the chrome applies without
     -- the manual /dragonui talent command.
     HookTalentFrameShow()
@@ -1672,6 +1767,9 @@ end
 
 eventFrame:RegisterEvent('PLAYER_LOGIN')
 eventFrame:RegisterEvent('ADDON_LOADED')
+eventFrame:RegisterEvent('UNIT_PET')
+eventFrame:RegisterEvent('PET_BAR_UPDATE')
+eventFrame:RegisterEvent('PLAYER_REGEN_ENABLED')
 eventFrame:SetScript('OnEvent', function(self, event)
     if event == 'PLAYER_LOGIN' then
         InstallFrameHooks()
@@ -1687,6 +1785,10 @@ eventFrame:SetScript('OnEvent', function(self, event)
         if not InCombatLockdown() then
             BlizzardArt:Apply()
         end
+    elseif event == 'UNIT_PET' or event == 'PET_BAR_UPDATE' or event == 'PLAYER_REGEN_ENABLED' then
+        -- Pet appearing/disappearing (mount/fly/land) re-lays the Pet tab;
+        -- re-apply our configured tab dimensions once Blizzard is done.
+        ScheduleReapplyTabLayouts()
     end
 end)
 
