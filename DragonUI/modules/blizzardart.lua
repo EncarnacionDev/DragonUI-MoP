@@ -9,8 +9,6 @@ local addon = select(2, ...)
 -- MVP target: SpellBookFrame.
 -- ============================================================================
 
-addon:Print("BlizzardArt: loading")
-
 local BlizzardArt = {
     applied = false,
     hooksInstalled = false,
@@ -542,11 +540,9 @@ end
 local function ApplySpellBook()
     local frame = _G.SpellBookFrame
     if not frame then
-        addon:Print('BlizzardArt: SpellBookFrame not available yet')
         return false
     end
     if InCombatLockdown() then
-        addon:Print('BlizzardArt: in combat, skipping')
         return false
     end
 
@@ -602,12 +598,10 @@ local function ApplySpellBook()
             HideVanillaFrameArt(frame)
         end
 
-        local tabsSkinned = SkinSpellBookBottomTabs()
-        local sideSkinned = SkinSpellBookSideTabs()
+        SkinSpellBookBottomTabs()
+        SkinSpellBookSideTabs()
 
         frame._duiSpellBookSkinned = true
-
-        addon:Print('BlizzardArt: SpellBookFrame skinned (tabs=' .. tabsSkinned .. ', side=' .. sideSkinned .. ')')
 
         if addon.debugMode then
             DumpFrameTextures(frame)
@@ -658,7 +652,6 @@ local function SkinTalentFrameExplicit(f, name)
         end
 
         f._duiTalentSkinned = true
-        addon:Print('BlizzardArt: talent frame skinned (' .. tostring(name) .. ')')
     end)
     if not ok then
         addon:Error('BlizzardArt talent skin failed: ' .. tostring(err))
@@ -876,7 +869,6 @@ local function ApplyCharacterFrame()
             end
 
             f._duiCharSkinned = true
-            addon:Print('BlizzardArt: character frame skinned')
         end)
         if not ok then
             addon:Error('BlizzardArt character skin failed: ' .. tostring(err))
@@ -948,7 +940,6 @@ local function ApplyQuestLogFrame()
             end
 
             f._duiQuestSkinned = true
-            addon:Print('BlizzardArt: quest log frame skinned')
         end)
         if not ok then
             addon:Error('BlizzardArt quest log skin failed: ' .. tostring(err))
@@ -1051,7 +1042,6 @@ local function ApplyPVEFrame()
             })
             StyleCloseButton(FindCloseButton(f), f)
             f._duiPVESkinned = true
-            addon:Print('BlizzardArt: PVEFrame skinned')
         end)
         if not ok then
             addon:Error('BlizzardArt PVEFrame skin failed: ' .. tostring(err))
@@ -1105,7 +1095,6 @@ local function ApplyPVPUIFrame()
             })
             StyleCloseButton(FindCloseButton(f), f)
             f._duiPVPUISkinned = true
-            addon:Print('BlizzardArt: PVPUIFrame skinned')
         end)
         if not ok then
             addon:Error('BlizzardArt PVPUIFrame skin failed: ' .. tostring(err))
@@ -1172,7 +1161,6 @@ local function ApplyPetJournal()
             })
             StyleCloseButton(FindCloseButton(f), f)
             f._duiPetJournalSkinned = true
-            addon:Print('BlizzardArt: PetJournalParent skinned')
         end)
         if not ok then
             addon:Error('BlizzardArt PetJournalParent skin failed: ' .. tostring(err))
@@ -1246,7 +1234,6 @@ local function ApplyGuildFrame()
             })
             StyleCloseButton(FindCloseButton(f), f)
             f._duiGuildSkinned = true
-            addon:Print('BlizzardArt: GuildFrame skinned')
         end)
         if not ok then
             addon:Error('BlizzardArt GuildFrame skin failed: ' .. tostring(err))
@@ -1299,7 +1286,6 @@ local function ApplyFriendsFrame()
             })
             StyleCloseButton(FindCloseButton(f), f)
             f._duiFriendsSkinned = true
-            addon:Print('BlizzardArt: FriendsFrame skinned')
         end)
         if not ok then
             addon:Error('BlizzardArt FriendsFrame skin failed: ' .. tostring(err))
@@ -1348,7 +1334,6 @@ local function ApplyMailFrame()
             })
             StyleCloseButton(FindCloseButton(f), f)
             f._duiMailSkinned = true
-            addon:Print('BlizzardArt: MailFrame skinned')
         end)
         if not ok then
             addon:Error('BlizzardArt MailFrame skin failed: ' .. tostring(err))
@@ -1397,7 +1382,6 @@ local function ApplyEncounterJournal()
             })
             StyleCloseButton(FindCloseButton(f), f)
             f._duiJournalSkinned = true
-            addon:Print('BlizzardArt: EncounterJournal skinned')
         end)
         if not ok then
             addon:Error('BlizzardArt EncounterJournal skin failed: ' .. tostring(err))
@@ -1444,7 +1428,6 @@ local function ApplyMacroFrame()
             })
             StyleCloseButton(FindCloseButton(f), f)
             f._duiMacroSkinned = true
-            addon:Print('BlizzardArt: MacroFrame skinned')
         end)
         if not ok then
             addon:Error('BlizzardArt MacroFrame skin failed: ' .. tostring(err))
@@ -1490,7 +1473,6 @@ local function ApplyInspectFrame()
             })
             StyleCloseButton(FindCloseButton(f), f)
             f._duiInspectSkinned = true
-            addon:Print('BlizzardArt: InspectFrame skinned')
         end)
         if not ok then
             addon:Error('BlizzardArt InspectFrame skin failed: ' .. tostring(err))
@@ -1539,7 +1521,6 @@ local function ApplyTradeSkillFrame()
             })
             StyleCloseButton(FindCloseButton(f), f)
             f._duiTradeSkillSkinned = true
-            addon:Print('BlizzardArt: TradeSkillFrame skinned')
         end)
         if not ok then
             addon:Error('BlizzardArt TradeSkillFrame skin failed: ' .. tostring(err))
@@ -1796,8 +1777,8 @@ end)
 local regOk, regErr = pcall(addon.RegisterModule, addon, "blizzardart", BlizzardArt,
     "Blizzard Panels Skin",
     "Replaces vanilla Blizzard panel chrome with the DragonUI metal kit.")
-addon:Print('BlizzardArt: registered=' .. tostring(regOk) ..
-    (regErr and (' err=' .. tostring(regErr)) or ''))
+if not regOk then
+    addon:Error("BlizzardArt registration failed: " .. tostring(regErr))
+end
 
 BlizzardArt.hooksInstalled = true
-addon:Print('BlizzardArt: loaded')
