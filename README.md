@@ -150,7 +150,7 @@ Missing from the list? [Let me know](https://github.com/EncarnacionDev/DragonUI-
 
 ## 📜 License
 
-DragonUI is released under the [MIT License](LICENSE). Bundled third-party components have their own licenses - see [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) and [`LICENSES/`](LICENSES/).
+DragonUI is released under the [MIT License](LICENSE). Bundled third-party components have their own licenses - see [`LICENSES/`](LICENSES/).
 
 ## 📎 Disclaimer
 
