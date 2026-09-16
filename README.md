@@ -14,10 +14,10 @@
 
 ---
 
-<img alt="DragonUI MoP" src="images/screenshot1.png" />
-<img alt="DragonUI MoP" src="images/screenshot2.png" />
-<img alt="DragonUI MoP" src="images/screenshot3.png" />
-<img alt="DragonUI MoP" src="images/screenshot4.png" />
+<img alt="DragonUI MoP" src="images/screenshot1.jpg" />
+<img alt="DragonUI MoP" src="images/screenshot2.jpg" />
+<img alt="DragonUI MoP" src="images/screenshot3.jpg" />
+<img alt="DragonUI MoP" src="images/screenshot4.jpg" />
 
 ## 📥 Download
 
