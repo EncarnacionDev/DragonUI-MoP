@@ -1148,13 +1148,14 @@ do
         bag:SetNormalTexture(nt)
 
         -- Inner edge glow: managed highlight filling the button
-        bag:SetHighlightTexture("")
-        local ht = bag:GetHighlightTexture()
+        -- MoP does not create a highlight texture for an empty path, so build it explicitly
+        local ht = bag:CreateTexture(name .. "HighlightTexture", "HIGHLIGHT")
         ht:SetAllPoints()
         ht:SetBlendMode("ADD")
         ht:SetAlpha(0.4)
         ht:SetTexture(mod.CT.bagslot)
         ht:SetTexCoord(358 / 512, 419 / 512, 1 / 128, 62 / 128)
+        bag:SetHighlightTexture(ht)
 
         -- Checked = bag currently shown in the item grid
         local checked = bag:CreateTexture(nil, "OVERLAY")

@@ -236,7 +236,7 @@ local function CreateInventoryFrame(name, parent)
     f:SetClampedToScreen(true)
     f:EnableMouse(true)
     f:SetMovable(true)
-    f:SetFrameStrata("HIGH")
+    f:SetFrameStrata("DIALOG")
     f:Hide()
     f:SetHitRectInsets(0, 35, 0, 75)
 
@@ -385,14 +385,6 @@ do
     local BAG_COLUMN_RESERVE = 52
     -- Chrome takes 95px of height, so two item rows is the real floor; anything higher blocks trimming
     local MIN_HEIGHT = -ITEM_FRAME_HEIGHT_OFFSET + 78
-    -- Rarity filter gets its own row above the money/token strip. Reserve that
-    -- extra height so the item grid never slides behind the gem buttons.
-    local QUALITY_FILTER_ROW_EXTRA = 24
-
-    local function QualityFilterActive()
-        local cfg = mod.GetModuleConfig()
-        return cfg and cfg.show_quality_filter or false
-    end
 
     local lastID = 1
     function InventoryFrame:New(titleText, settings, isBank, key)
@@ -420,7 +412,8 @@ do
         f.nameFilter = _G[f:GetName() .. "Search"]
 
         f.qualityFilter = mod.QualityFilter:New(f)
-        f.qualityFilter:SetPoint("BOTTOM", 0, 31)
+        f.qualityFilter:SetPoint("BOTTOMLEFT", f, "BOTTOMLEFT", 14, 8)
+        f.qualityFilter:SetFrameLevel(f:GetFrameLevel() + 4)
 
         f.itemFrame = mod.ItemFrame:New(f)
         f.itemFrame:SetPoint("TOPLEFT", ITEM_FRAME_LEFT_INSET, -65)
@@ -432,7 +425,8 @@ do
         if not isBank then
             f.tokenBar = mod.TokenBar:New(f)
             f.tokenBar:SetSize(220, 19)
-            f.tokenBar:SetPoint("BOTTOMLEFT", f, "BOTTOMLEFT", 14, 8)
+            -- Sits to the right of the rarity filter, left of the money
+            f.tokenBar:SetPoint("LEFT", f.qualityFilter, "RIGHT", 12, 0)
             f.tokenBar:Refresh()
         end
 
@@ -776,9 +770,6 @@ do
             newW = newW - BAG_COLUMN_RESERVE
         end
         local newH = self:GetHeight() + ITEM_FRAME_HEIGHT_OFFSET
-        if QualityFilterActive() then
-            newH = newH - QUALITY_FILTER_ROW_EXTRA
-        end
         if not (prevW == newW and prevH == newH) then
             self.itemFrame:SetWidth(newW)
             self.itemFrame:SetHeight(newH)
@@ -786,7 +777,7 @@ do
         end
     end
 
-    -- Quality filter sits in its own bottom row, above the money/token strip
+    -- Quality filter shares the bottom row with the money/token strip
     function InventoryFrame:UpdateBottomLayout()
         local cfg = mod.GetModuleConfig()
         if cfg and cfg.show_quality_filter then
@@ -794,7 +785,6 @@ do
         else
             self.qualityFilter:Hide()
         end
-        -- The filter row reserves item-grid height above the money/token strip.
         self:UpdateItemFrameSize()
     end
 
